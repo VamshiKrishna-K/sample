@@ -1,73 +1,33 @@
-#include <bits/stdc++.h>
-using namespace std;
+def crc_check(codeword, polynomial):
+    dividend = list(codeword)
+    poly = list(polynomial)
+    degree = len(polynomial) - 1
 
-string checkCRC(string data, string divisor)
-{
-    // Degree of polynomial
-    int n = divisor.size() - 1;
+    # Perform modulo-2 division
+    for i in range(len(codeword) - degree):
+        if dividend[i] == '1':
+            for j in range(len(poly)):
+                dividend[i + j] = str(int(dividend[i + j]) ^ int(poly[j]) )
 
-    // XOR division
-    for (int i = 0; i <= data.size() - divisor.size(); i++)
-    {
-        if (data[i] == '1')
-        {
-            for (int j = 0; j < divisor.size(); j++)
-            {
-                data[i + j] =
-                    (data[i + j] == divisor[j]) ? '0' : '1';
-            }
-        }
-    }
+    # Extract remainder
+    remainder = ''.join(dividend[-degree:])
 
-    // Get remainder
-    return data.substr(data.size() - n);
-}
-
-int main()
-{
-    string data;
-
-    cout << "Enter transmitted code: ";
-    cin >> data;
-
-    string crc12 = "1100000001111";
-    string crc16 = "11000000000000101";
-    string ccitt = "10001000000100001";
-
-    cout << "\n========== CRC-12 ==========\n";
-
-    string r = checkCRC(data, crc12);
-
-    cout << "Remainder: " << r << endl;
-
-    if (r.find('1') == string::npos)
-        cout << "Data is CORRECT\n";
-    else
-        cout << "Data is CORRUPTED\n";
+    return remainder
 
 
-    cout << "\n========== CRC-16 ==========\n";
+# Input generator polynomial
+polynomial = input("Enter the generator polynomial: ")
 
-    r = checkCRC(data, crc16);
+# Input received codeword
+codeword = input("Enter the received codeword: ")
 
-    cout << "Remainder: " << r << endl;
+remainder = crc_check(codeword, polynomial)
 
-    if (r.find('1') == string::npos)
-        cout << "Data is CORRECT\n";
-    else
-        cout << "Data is CORRUPTED\n";
+print("\nGenerator Polynomial:", polynomial)
+print("Received Codeword:", codeword)
+print("Remainder:", remainder)
 
-
-    cout << "\n========== CRC-CCITT ==========\n";
-
-    r = checkCRC(data, ccitt);
-
-    cout << "Remainder: " << r << endl;
-
-    if (r.find('1') == string::npos)
-        cout << "Data is CORRECT\n";
-    else
-        cout << "Data is CORRUPTED\n";
-
-    return 0;
-}
+if '1' not in remainder:
+    print("Result: No Error Detected")
+else:
+    print("Result: Error Detected")
