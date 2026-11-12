@@ -1,0 +1,37 @@
+
+def crc(data, polynomial, degree):
+    # Convert data into binary
+    data_bits = ''.join(format(ord(ch), '08b') for ch in data)
+
+    # Append zeros equal to the degree
+    dividend = list(data_bits + '0' * degree)
+    poly = list(polynomial)
+
+    # Perform modulo-2 division (XOR)
+    for i in range(len(data_bits)):
+        if dividend[i] == '1':
+            for j in range(len(poly)):
+                dividend[i + j] = str(int(dividend[i + j]) ^ int(poly[j]))
+
+    # Extract CRC remainder
+    remainder = ''.join(dividend[-degree:])
+
+    # Generate codeword
+    codeword = data_bits + remainder
+
+    return remainder, codeword
+
+# Input data
+data = input("Enter the data: ")
+
+# Input generator polynomial
+polynomial = input("Enter the generator polynomial: ")
+
+degree = len(polynomial) - 1
+
+# Calculate CRC
+remainder, codeword = crc(data, polynomial, degree)
+
+print("\nGenerator Polynomial:", polynomial)
+print("CRC Remainder:", remainder)
+print("Transmitted Codeword:", codeword)
