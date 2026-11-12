@@ -1,0 +1,109 @@
+
+FLAG = "FLAG"
+ESC = "ESC"
+
+# 1. CHARACTER COUNT
+def character_count(frames):
+    stream = ""
+    for frame in frames:
+        stream += str(len(frame) + 1)
+        stream += frame
+    return stream
+
+
+def decode_character_count(stream):
+    i = 0
+    print("Received frames:", end=" ")
+
+    while i < len(stream):
+        n = int(stream[i])
+        print(stream[i + 1:i + n], end=" ")
+        i += n
+
+    print()
+
+
+# 2. CHARACTER STUFFING
+def character_stuff(data):
+    frame = [FLAG]
+    for token in data.split():
+        if token == FLAG or token == ESC:
+            frame.append(ESC)
+        frame.append(token)
+    frame.append(FLAG)
+    return " ".join(frame)
+
+
+def character_destuff(frame):
+    words = frame.split()
+    result = []
+    i = 1
+    while i < len(words) - 1:
+        if words[i] == ESC:
+            i += 1
+        if i < len(words) - 1:
+            result.append(words[i])
+        i += 1
+    print("After de-stuffing:", " ".join(result))
+
+
+# 3. BIT STUFFING
+def bit_stuff(bits):
+    frame = "01111110"
+    count = 0
+    for bit in bits:
+        frame += bit
+        if bit == '1':
+            count += 1
+            if count == 5:
+                frame += '0'
+                count = 0
+        else:
+            count = 0
+    frame += "01111110"
+    return frame
+
+
+def bit_destuff(frame):
+    result = ""
+    count = 0
+    i = 8
+
+    while i < len(frame) - 8:
+        bit = frame[i]
+        result += bit
+        if bit == '1':
+            count += 1
+            if count == 5:
+                i += 1  # Skip stuffed 0
+                count = 0
+        else:
+            count = 0
+        i += 1
+
+    return result
+
+choice=int(input(" Character count(1) Character stuffing(2) Bite stuffing(3)"))
+if choice==1:
+    print("1. CHARACTER COUNT")
+    n = int(input("Enter number of frames: "))
+    frames = []
+    print("Enter frames (without spaces):")
+    for i in range(n):
+        frames.append(input())
+    stream = character_count(frames)
+    print("Transmitted stream:", stream)
+    decode_character_count(stream)
+elif choice==2:
+    print("\n2. CHARACTER STUFFING")
+    data = input("Enter data (words separated by spaces): ")
+    frame = character_stuff(data)
+    print("Stuffed frame:", frame)
+    character_destuff(frame)
+elif choice==3:
+    print("\n3. BIT STUFFING")
+    bits = input("Enter bit string: ")
+    frame = bit_stuff(bits)
+    print("Stuffed frame:", frame)
+    result = bit_destuff(frame)
+    print("After de-stuffing:", result)
