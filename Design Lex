@@ -1,0 +1,182 @@
+
+#include <bits/stdc++.h>
+using namespace std;
+
+#define MAX 20
+
+string keywords[] = {
+    "int", "float", "char", "if", "else",
+    "while", "for", "return", "void"
+};
+
+bool isKeyword(string word) {
+    for (int i = 0; i < 9; i++) {
+        if (word == keywords[i])
+            return true;
+    }
+    return false;
+}
+
+int main() {
+    ifstream fp;
+    string filename, token;
+    char ch, next;
+
+    cout << "Enter input file name: ";
+    cin >> filename;
+
+    fp.open(filename);
+
+    if (!fp) {
+        cout << "File cannot be opened.\n";
+        return 0;
+    }
+
+    cout << "\nTokens:\n";
+
+    while (fp.get(ch)) {
+
+        // Ignore spaces
+        if (isspace(ch))
+            continue;
+
+        // Comments and division operator
+        if (ch == '/') {
+            if (fp.get(next)) {
+
+                // Single-line comment
+                if (next == '/') {
+                    while (fp.get(ch) && ch != '\n');
+                    continue;
+                }
+
+                // Multi-line comment
+                if (next == '*') {
+                    char prev = '\0';
+
+                    while (fp.get(ch)) {
+                        if (prev == '*' && ch == '/')
+                            break;
+                        prev = ch;
+                    }
+                    continue;
+                }
+
+                fp.unget();
+            }
+
+            cout << "Operator: /\n";
+            continue;
+        }
+
+        // String
+        if (ch == '"') {
+            token = "\"";
+
+            while (fp.get(ch) && ch != '"')
+                token += ch;
+
+            if (ch == '"')
+                token += '"';
+
+            cout << "String: " << token << "\n";
+            continue;
+        }
+
+        // Character
+        if (ch == '\'') {
+            token = "'";
+
+            while (fp.get(ch) && ch != '\'')
+                token += ch;
+
+            if (ch == '\'')
+                token += '\'';
+
+            cout << "Character: " << token << "\n";
+            continue;
+        }
+
+        // Keyword or Identifier
+        if (isalpha(ch) || ch == '_') {
+            token = ch;
+
+            while (fp.get(ch)) {
+                if (isalnum(ch) || ch == '_')
+                    token += ch;
+                else {
+                    fp.unget();
+                    break;
+                }
+            }
+
+            if (isKeyword(token))
+                cout << "Keyword: " << token << "\n";
+            else
+                cout << "Identifier: " << token << "\n";
+
+            continue;
+        }
+
+        // Number
+        if (isdigit(ch)) {
+            token = ch;
+
+            while (fp.get(ch)) {
+                if (isdigit(ch) || ch == '.')
+                    token += ch;
+                else {
+                    fp.unget();
+                    break;
+                }
+            }
+
+            cout << "Number: " << token << "\n";
+            continue;
+        }
+
+        // Operators
+        if (ch == '+' || ch == '-' ||
+            ch == '*' || ch == '%' ||
+            ch == '=' || ch == '<' ||
+            ch == '>') {
+
+            if (fp.get(next)) {
+                if ((ch == '+' && next == '+') ||
+                    (ch == '-' && next == '-') ||
+                    (ch == '=' && next == '=') ||
+                    (ch == '<' && next == '=') ||
+                    (ch == '>' && next == '=')) {
+
+                    cout << "Operator: " << ch << next << "\n";
+                }
+                else {
+                    fp.unget();
+                    cout << "Operator: " << ch << "\n";
+                }
+            }
+            else {
+                cout << "Operator: " << ch << "\n";
+            }
+
+            continue;
+        }
+
+        // Symbols
+        if (ch == ';' || ch == ',' ||
+            ch == '(' || ch == ')' ||
+            ch == '{' || ch == '}' ||
+            ch == '[' || ch == ']') {
+
+            cout << "Symbol: " << ch << "\n";
+            continue;
+        }
+
+        // Unknown
+        cout << "Unknown: " << ch << "\n";
+    }
+
+    fp.close();
+
+    return 0;
+}
