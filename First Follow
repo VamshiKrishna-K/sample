@@ -1,12 +1,24 @@
+import re
 
 # Read Grammar
 grammar = {}
 
 n = int(input("Enter number of productions: "))
 
+# Tokenize grammar symbols
+def tokenize(s):
+    s = s.replace("ε", "#")
+    return re.findall(r"[A-Z][a-z0-9_]*'?|[a-z][a-z0-9_]*|[^\s]", s)
+
 for _ in range(n):
-    lhs, rhs = input("Enter production: ").replace(" ", "").split("->")
-    grammar.setdefault(lhs, []).extend(rhs.split("|"))
+    lhs, rhs = input("Enter production: ").split("->")
+    lhs = lhs.strip()
+
+    grammar.setdefault(lhs, [])
+
+    for prod in rhs.split("|"):
+        grammar[lhs].append(tokenize(prod.strip()))
+
 
 # Initialize FIRST and FOLLOW
 first = {nt: set() for nt in grammar}
@@ -23,7 +35,7 @@ def find_first():
         for nt in grammar:
             for prod in grammar[nt]:
 
-                if prod == "#":
+                if prod == ["#"]:
                     if "#" not in first[nt]:
                         first[nt].add("#")
                         changed = True
@@ -36,6 +48,7 @@ def find_first():
                             if ch not in first[nt]:
                                 first[nt].add(ch)
                                 changed = True
+
                             nullable = False
                             break
 
