@@ -1,4 +1,4 @@
-//take string input:cdcd
+#take string input:cdcd
 from collections import defaultdict, deque
 
 # Hardcoded Grammar
@@ -193,7 +193,7 @@ while True:
         stack.append(int(goto[stack[-1]][A]))
 
 
-/*
+"""
 LALR(1) Parsing Table
 
 State   c       d       $       C       S       
@@ -227,4 +227,4 @@ Stack                   Input               Action
 0 2                     $                   acc
 
 Accepted
-*/
+"""
