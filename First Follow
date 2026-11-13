@@ -120,7 +120,30 @@ for nt in grammar:
     print(f"FIRST({nt}) = {first[nt]}")
 
 
+/*
+Enter number of productions:  5
+Enter production:  E->TE'
+Enter production:  E'->+TE'|#
+Enter production:  T->FT'
+Enter production:  T'->*FT'|#
+Enter production:  F->(E)|id
+
+FIRST SETS:
+FIRST(E) = {'id', '('}
+FIRST(E') = {'+', '#'}
+FIRST(T) = {'(', 'id'}
+FIRST(T') = {'*', '#'}
+FIRST(F) = {'id', '('}
+
+FOLLOW SETS:
+FOLLOW(E) = {'$', ')'}
+FOLLOW(E') = {'$', ')'}
+FOLLOW(T) = {')', '+', '$'}
+FOLLOW(T') = {')', '+', '$'}
+FOLLOW(F) = {')', '+', '$', '*'}
+
 # Display FOLLOW
 print("\nFOLLOW SETS:")
 for nt in grammar:
     print(f"FOLLOW({nt}) = {follow[nt]}")
+*/
