@@ -1,4 +1,5 @@
-#take input:id+id*id
+
+# Predictive Parser input id+id*id
 import re
 
 # Grammar
@@ -141,7 +142,7 @@ def parse():
         current = tokens[i]
 
         if top == '$' and current == '$':
-            print(f"{''.join(stack):<22}{''.join(tokens[i:]):<22}ACCEPT")
+            print(f"{''.join(stack[::-1]):<22}{''.join(tokens[i:]):<22}ACCEPT")
             print("\nString accepted.")
             return
 
@@ -160,11 +161,11 @@ def parse():
                 stack = prod + stack
 
         else:
-            print(f"{''.join(stack):<22}{''.join(tokens[i:]):<22}ERROR")
+            print(f"{''.join(stack[::-1]):<22}{''.join(tokens[i:]):<22}ERROR")
             print("\nString rejected.")
             return
 
-        print(f"{''.join(stack):<22}{''.join(tokens[i:]):<22}{action}")
+        print(f"{''.join(stack[::-1]):<22}{''.join(tokens[i:]):<22}{action}")
 
 # Main
 find_first()
@@ -173,7 +174,7 @@ create_table()
 display_table()
 parse()
 
-/*
+"""
 PREDICTIVE PARSING TABLE
 -----------------------------------------------------------------
                    $        (        )        *        +       id    
@@ -190,23 +191,23 @@ PARSING STRING
 -----------------------------------------------------------------
 Stack                 Input                 Action
 -----------------------------------------------------------------
-TE'$                  id+id*id$             E -> TE'
-FT'E'$                id+id*id$             T -> FT'
-idT'E'$               id+id*id$             F -> id
-T'E'$                 +id*id$               Match id
-E'$                   +id*id$               T' -> epsilon
-+TE'$                 +id*id$               E' -> +TE'
-TE'$                  id*id$                Match +
-FT'E'$                id*id$                T -> FT'
-idT'E'$               id*id$                F -> id
-T'E'$                 *id$                  Match id
-*FT'E'$               *id$                  T' -> *FT'
-FT'E'$                id$                   Match *
-idT'E'$               id$                   F -> id
-T'E'$                 $                     Match id
-E'$                   $                     T' -> epsilon
+$E'T                  id+id*id$             E -> TE'
+$E'T'F                id+id*id$             T -> FT'
+$E'T'id               id+id*id$             F -> id
+$E'T'                 +id*id$               Match id
+$E'                   +id*id$               T' -> epsilon
+$E'T+                 +id*id$               E' -> +TE'
+$E'T                  id*id$                Match +
+$E'T'F                id*id$                T -> FT'
+$E'T'id               id*id$                F -> id
+$E'T'                 *id$                  Match id
+$E'T'F*               *id$                  T' -> *FT'
+$E'T'F                id$                   Match *
+$E'T'id               id$                   F -> id
+$E'T'                 $                     Match id
+$E'                   $                     T' -> epsilon
 $                     $                     E' -> epsilon
 $                     $                     ACCEPT
 
 String accepted.
-*/
+"""
