@@ -118,7 +118,10 @@ find_follow()
 print("\nFIRST SETS:")
 for nt in grammar:
     print(f"FIRST({nt}) = {first[nt]}")
-
+# Display FOLLOW
+print("\nFOLLOW SETS:")
+for nt in grammar:
+    print(f"FOLLOW({nt}) = {follow[nt]}")
 
 /*
 Enter number of productions:  5
@@ -142,8 +145,4 @@ FOLLOW(T) = {')', '+', '$'}
 FOLLOW(T') = {')', '+', '$'}
 FOLLOW(F) = {')', '+', '$', '*'}
 
-# Display FOLLOW
-print("\nFOLLOW SETS:")
-for nt in grammar:
-    print(f"FOLLOW({nt}) = {follow[nt]}")
 */
