@@ -1,0 +1,230 @@
+//take string input:cdcd
+from collections import defaultdict, deque
+
+# Hardcoded Grammar
+grammar = {
+    'S': ['CC'],
+    'C': ['cC', 'd']
+}
+
+start = 'S'
+nts = set(grammar)
+aug = 'Z'
+
+prods = [(aug, start)]
+prods += [(a, b) for a in grammar for b in grammar[a]]
+
+all_nts = nts | {aug}
+terms = {x for a, b in prods for x in b if x not in all_nts}
+terms.add('$')
+
+# FIRST Sets
+first = {x: {x} for x in terms}
+first.update({x: set() for x in all_nts})
+
+changed = True
+while changed:
+    changed = False
+    for A, rhs in prods:
+        old = len(first[A])
+        if not rhs:
+            first[A].add('#')
+        else:
+            nullable = True
+            for x in rhs:
+                first[A] |= first[x] - {'#'}
+                if '#' not in first[x]:
+                    nullable = False
+                    break
+            if nullable:
+                first[A].add('#')
+        changed |= len(first[A]) > old
+
+def first_seq(seq):
+    result = set()
+    for x in seq:
+        result |= first[x] - {'#'}
+        if '#' not in first[x]:
+            break
+    else:
+        result.add('#')
+    return result
+
+# Production Index
+by_lhs = defaultdict(list)
+for i, (a, b) in enumerate(prods):
+    by_lhs[a].append(i)
+
+# Closure
+def closure(items):
+    I = set(items)
+    changed = True
+    while changed:
+        changed = False
+        for p, d, la in list(I):
+            A, rhs = prods[p]
+            if d < len(rhs) and rhs[d] in all_nts:
+                B = rhs[d]
+                for b in first_seq(rhs[d+1:] + la) - {'#'}:
+                    for j in by_lhs[B]:
+                        item = (j, 0, b)
+                        if item not in I:
+                            I.add(item)
+                            changed = True
+    return frozenset(I)
+
+# Canonical LR(1) States
+states = [closure({(0, 0, '$')})]
+visited = {states[0]: 0}
+trans = {}
+queue = deque([0])
+
+while queue:
+    i = queue.popleft()
+    symbols = {prods[p][1][d] for p, d, la in states[i]
+               if d < len(prods[p][1])}
+
+    for x in sorted(symbols):
+        J = closure({(p, d+1, la) for p, d, la in states[i]
+                     if d < len(prods[p][1]) and prods[p][1][d] == x})
+
+        if J not in visited:
+            visited[J] = len(states)
+            states.append(J)
+            queue.append(visited[J])
+
+        trans[i, x] = visited[J]
+
+# Merge Same LR(0) Cores
+cores = {}
+merged = []
+old_new = {}
+
+for i, I in enumerate(states):
+    core = frozenset((p, d) for p, d, la in I)
+    if core not in cores:
+        cores[core] = len(merged)
+        merged.append(set())
+    old_new[i] = cores[core]
+    merged[old_new[i]].update(I)
+
+mt = {}
+for (i, x), j in trans.items():
+    mt[old_new[i], x] = old_new[j]
+
+# ACTION and GOTO
+action = defaultdict(dict)
+goto = defaultdict(dict)
+
+for (i, x), j in mt.items():
+    if x in terms:
+        action[i][x] = 's' + str(j)
+    else:
+        goto[i][x] = str(j)
+
+for i, I in enumerate(merged):
+    for p, d, la in I:
+        A, rhs = prods[p]
+        if d == len(rhs):
+            value = 'acc' if p == 0 else 'r' + str(p)
+            if la in action[i] and action[i][la] != value:
+                raise Exception("Grammar is not LALR(1)")
+            action[i][la] = value
+
+# Display Parsing Table
+term_order = sorted(terms - {'$'}) + ['$']
+nt_order = sorted(nts)
+
+print("\nLALR(1) Parsing Table\n")
+print(f"{'State':<8}", end='')
+
+for x in term_order + nt_order:
+    print(f"{x:<8}", end='')
+print()
+
+for i in range(len(merged)):
+    print(f"{i:<8}", end='')
+    for x in term_order:
+        print(f"{action[i].get(x, '-'):<8}", end='')
+    for x in nt_order:
+        print(f"{goto[i].get(x, '-'):<8}", end='')
+    print()
+
+# Productions
+print("\nProductions:")
+for i, (a, b) in enumerate(prods[1:], 1):
+    print(f"{i}: {a} -> {b}")
+
+# User Input String
+s = input("\nEnter string: ") + '$'
+stack = [0]
+pos = 0
+
+print("\nParsing Steps\n")
+print(f"{'Stack':<24}{'Input':<20}Action")
+
+while True:
+    state = stack[-1]
+    act = action[state].get(s[pos])
+    st = " ".join(map(str, stack))
+
+    if not act:
+        print(f"{st:<24}{s[pos:]:<20}Error")
+        print("\nRejected")
+        break
+
+    print(f"{st:<24}{s[pos:]:<20}{act}")
+
+    if act == 'acc':
+        print("\nAccepted")
+        break
+
+    elif act[0] == 's':
+        stack.append(int(act[1:]))
+        pos += 1
+
+    else:
+        p = int(act[1:])
+        A, rhs = prods[p]
+
+        for _ in rhs:
+            stack.pop()
+
+        stack.append(int(goto[stack[-1]][A]))
+
+
+/*
+LALR(1) Parsing Table
+
+State   c       d       $       C       S       
+0       s3      s4      -       1       2       
+1       s3      s4      -       5       -       
+2       -       -       acc     -       -       
+3       s3      s4      -       6       -       
+4       r3      r3      r3      -       -       
+5       -       -       r1      -       -       
+6       r2      r2      r2      -       -       
+
+Productions:
+1: S -> CC
+2: C -> cC
+3: C -> d
+
+Enter string:  cdcd
+
+Parsing Steps
+
+Stack                   Input               Action
+0                       cdcd$               s3
+0 3                     dcd$                s4
+0 3 4                   cd$                 r3
+0 3 6                   cd$                 r2
+0 1                     cd$                 s3
+0 1 3                   d$                  s4
+0 1 3 4                 $                   r3
+0 1 3 6                 $                   r2
+0 1 5                   $                   r1
+0 2                     $                   acc
+
+Accepted
+*/
