@@ -1,0 +1,117 @@
+
+# Read Grammar
+grammar = {}
+
+n = int(input("Enter number of productions: "))
+
+for _ in range(n):
+    lhs, rhs = input("Enter production: ").replace(" ", "").split("->")
+    grammar.setdefault(lhs, []).extend(rhs.split("|"))
+
+# Initialize FIRST and FOLLOW
+first = {nt: set() for nt in grammar}
+follow = {nt: set() for nt in grammar}
+
+
+# Find FIRST
+def find_first():
+    changed = True
+
+    while changed:
+        changed = False
+
+        for nt in grammar:
+            for prod in grammar[nt]:
+
+                if prod == "#":
+                    if "#" not in first[nt]:
+                        first[nt].add("#")
+                        changed = True
+
+                else:
+                    nullable = True
+
+                    for ch in prod:
+                        if ch not in grammar:
+                            if ch not in first[nt]:
+                                first[nt].add(ch)
+                                changed = True
+                            nullable = False
+                            break
+
+                        old = len(first[nt])
+                        first[nt].update(first[ch] - {"#"})
+
+                        if len(first[nt]) != old:
+                            changed = True
+
+                        if "#" not in first[ch]:
+                            nullable = False
+                            break
+
+                    if nullable and "#" not in first[nt]:
+                        first[nt].add("#")
+                        changed = True
+
+
+# Find FIRST of a string
+def first_string(s):
+    result = set()
+
+    for ch in s:
+        if ch not in grammar:
+            result.add(ch)
+            return result
+
+        result.update(first[ch] - {"#"})
+
+        if "#" not in first[ch]:
+            return result
+
+    result.add("#")
+    return result
+
+
+# Find FOLLOW
+def find_follow():
+    start = next(iter(grammar))
+    follow[start].add('$')
+
+    changed = True
+
+    while changed:
+        changed = False
+
+        for nt in grammar:
+            for prod in grammar[nt]:
+                for i, ch in enumerate(prod):
+
+                    if ch in grammar:
+                        temp = first_string(prod[i + 1:])
+
+                        old = len(follow[ch])
+
+                        follow[ch].update(temp - {"#"})
+
+                        if "#" in temp:
+                            follow[ch].update(follow[nt])
+
+                        if len(follow[ch]) != old:
+                            changed = True
+
+
+# Execute
+find_first()
+find_follow()
+
+
+# Display FIRST
+print("\nFIRST SETS:")
+for nt in grammar:
+    print(f"FIRST({nt}) = {first[nt]}")
+
+
+# Display FOLLOW
+print("\nFOLLOW SETS:")
+for nt in grammar:
+    print(f"FOLLOW({nt}) = {follow[nt]}")
