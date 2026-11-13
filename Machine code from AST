@@ -1,0 +1,60 @@
+class Node:
+    def __init__(self, value, left=None, right=None):
+        self.value = value
+        self.left = left
+        self.right = right
+
+
+# Convert expression into AST
+def build(expr):
+    for op in ['+', '-']:
+        if op in expr[1:]:
+            i = expr.rfind(op)
+            return Node(op, build(expr[:i]), build(expr[i+1:]))
+
+    for op in ['*', '/']:
+        if op in expr[1:]:
+            i = expr.rfind(op)
+            return Node(op, build(expr[:i]), build(expr[i+1:]))
+
+    return Node(expr)
+
+
+# Generate machine code
+count = 1
+
+def generate(node):
+    global count
+
+    if node.left is None:
+        return node.value
+
+    left = generate(node.left)
+    right = generate(node.right)
+
+    reg = "R" + str(count)
+    count += 1
+
+    print("MOV", left, reg)
+
+    if node.value == '+':
+        print("ADD", right, reg)
+    elif node.value == '-':
+        print("SUB", right, reg)
+    elif node.value == '*':
+        print("MUL", right, reg)
+    elif node.value == '/':
+        print("DIV", right, reg)
+
+    return reg
+
+
+# Main
+expr = input("Enter expression: ")
+
+root = build(expr)
+
+print("\nGenerated Machine Code:")
+result = generate(root)
+
+print("Result stored in", result)
