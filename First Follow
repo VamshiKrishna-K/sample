@@ -1,3 +1,4 @@
+
 import re
 
 # Read Grammar
@@ -12,12 +13,7 @@ def tokenize(s):
 
 for _ in range(n):
     lhs, rhs = input("Enter production: ").split("->")
-    lhs = lhs.strip()
-
-    grammar.setdefault(lhs, [])
-
-    for prod in rhs.split("|"):
-        grammar[lhs].append(tokenize(prod.strip()))
+    grammar[lhs.strip()] = [tokenize(p.strip()) for p in rhs.split("|")]
 
 
 # Initialize FIRST and FOLLOW
