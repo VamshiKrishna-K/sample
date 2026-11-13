@@ -123,7 +123,7 @@ print("\nFOLLOW SETS:")
 for nt in grammar:
     print(f"FOLLOW({nt}) = {follow[nt]}")
 
-/*
+"""
 Enter number of productions:  5
 Enter production:  E->TE'
 Enter production:  E'->+TE'|#
@@ -145,4 +145,4 @@ FOLLOW(T) = {')', '+', '$'}
 FOLLOW(T') = {')', '+', '$'}
 FOLLOW(F) = {')', '+', '$', '*'}
 
-*/
+"""
