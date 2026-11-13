@@ -1,0 +1,212 @@
+#take input:id+id*id
+import re
+
+# Grammar
+grammar = {
+    'E':  [['T', "E'"]],
+    "E'": [['+', 'T', "E'"], ['#']],
+    'T':  [['F', "T'"]],
+    "T'": [['*', 'F', "T'"], ['#']],
+    'F':  [['(', 'E', ')'], ['id']]
+}
+
+first = {nt: set() for nt in grammar}
+follow = {nt: set() for nt in grammar}
+table = {}
+
+# FIRST
+def find_first():
+    changed = True
+    while changed:
+        changed = False
+
+        for nt in grammar:
+            for prod in grammar[nt]:
+                old = len(first[nt])
+
+                for sym in prod:
+                    if sym == '#':
+                        first[nt].add('#')
+                        break
+                    elif sym not in grammar:
+                        first[nt].add(sym)
+                        break
+                    else:
+                        first[nt] |= first[sym] - {'#'}
+                        if '#' not in first[sym]:
+                            break
+                else:
+                    first[nt].add('#')
+
+                if len(first[nt]) != old:
+                    changed = True
+
+# FIRST of a sequence
+def first_seq(seq):
+    result = set()
+
+    for sym in seq:
+        if sym not in grammar:
+            result.add(sym)
+            return result
+
+        result |= first[sym] - {'#'}
+
+        if '#' not in first[sym]:
+            return result
+
+    result.add('#')
+    return result
+
+# FOLLOW
+def find_follow():
+    follow['E'].add('$')
+
+    changed = True
+    while changed:
+        changed = False
+
+        for nt in grammar:
+            for prod in grammar[nt]:
+                for i, sym in enumerate(prod):
+                    if sym in grammar:
+                        old = len(follow[sym])
+
+                        rest = first_seq(prod[i+1:])
+                        follow[sym] |= rest - {'#'}
+
+                        if '#' in rest:
+                            follow[sym] |= follow[nt]
+
+                        if len(follow[sym]) != old:
+                            changed = True
+
+# Parsing Table
+def create_table():
+    for nt in grammar:
+        for prod in grammar[nt]:
+            result = first_seq(prod)
+
+            for terminal in result - {'#'}:
+                table[nt, terminal] = prod
+
+            if '#' in result:
+                for terminal in follow[nt]:
+                    table[nt, terminal] = prod
+
+# Display Table
+def display_table():
+    terminals = ['$', '(', ')', '*', '+', 'id']
+
+    print("\nPREDICTIVE PARSING TABLE")
+    print("-" * 65)
+    print(f"{'':15}", end="")
+
+    for t in terminals:
+        print(f"{t:^9}", end="")
+
+    print("\n" + "-" * 65)
+
+    for nt in grammar:
+        print(f"{nt:<15}", end="")
+
+        for t in terminals:
+            prod = table.get((nt, t))
+            value = ''.join(prod) if prod else '-'
+            print(f"{value:^9}", end="")
+
+        print()
+
+# Parse String
+def parse():
+    s = input("\nEnter string to parse: ").replace(" ", "")
+
+    tokens = re.findall(r'id|[()+*]', s)
+
+    if ''.join(tokens) != s:
+        print("Invalid input symbols")
+        return
+
+    tokens.append('$')
+    stack = ['E', '$']
+    i = 0
+
+    print("\nPARSING STRING")
+    print("-" * 65)
+    print(f"{'Stack':<22}{'Input':<22}{'Action'}")
+    print("-" * 65)
+
+    while stack:
+        top = stack[0]
+        current = tokens[i]
+
+        if top == '$' and current == '$':
+            print(f"{''.join(stack):<22}{''.join(tokens[i:]):<22}ACCEPT")
+            print("\nString accepted.")
+            return
+
+        if top == current:
+            action = "Match " + current
+            stack.pop(0)
+            i += 1
+
+        elif top in grammar and (top, current) in table:
+            prod = table[top, current]
+            action = f"{top} -> {''.join(prod).replace('#', 'epsilon')}"
+
+            stack.pop(0)
+
+            if prod != ['#']:
+                stack = prod + stack
+
+        else:
+            print(f"{''.join(stack):<22}{''.join(tokens[i:]):<22}ERROR")
+            print("\nString rejected.")
+            return
+
+        print(f"{''.join(stack):<22}{''.join(tokens[i:]):<22}{action}")
+
+# Main
+find_first()
+find_follow()
+create_table()
+display_table()
+parse()
+
+/*
+PREDICTIVE PARSING TABLE
+-----------------------------------------------------------------
+                   $        (        )        *        +       id    
+-----------------------------------------------------------------
+E                  -       TE'       -        -        -       TE'   
+E'                 #        -        #        -      +TE'       -    
+T                  -       FT'       -        -        -       FT'   
+T'                 #        -        #      *FT'       #        -    
+F                  -       (E)       -        -        -       id    
+
+Enter string to parse:  id+id*id
+
+PARSING STRING
+-----------------------------------------------------------------
+Stack                 Input                 Action
+-----------------------------------------------------------------
+TE'$                  id+id*id$             E -> TE'
+FT'E'$                id+id*id$             T -> FT'
+idT'E'$               id+id*id$             F -> id
+T'E'$                 +id*id$               Match id
+E'$                   +id*id$               T' -> epsilon
++TE'$                 +id*id$               E' -> +TE'
+TE'$                  id*id$                Match +
+FT'E'$                id*id$                T -> FT'
+idT'E'$               id*id$                F -> id
+T'E'$                 *id$                  Match id
+*FT'E'$               *id$                  T' -> *FT'
+FT'E'$                id$                   Match *
+idT'E'$               id$                   F -> id
+T'E'$                 $                     Match id
+E'$                   $                     T' -> epsilon
+$                     $                     E' -> epsilon
+$                     $                     ACCEPT
+
+String accepted.
+*/
